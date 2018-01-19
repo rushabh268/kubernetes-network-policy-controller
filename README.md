@@ -1,2 +1,3 @@
 # kubernetes-network-policy-controller
-Network Policy controller for Kubernetes
+
+Kubernetes python client based Network Policy controller for Kubernetes
