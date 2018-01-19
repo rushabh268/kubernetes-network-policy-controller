@@ -1,0 +1,8 @@
+References:
+
+https://github.com/kubernetes-client/python/blob/master/kubernetes/README.md
+https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/ExtensionsV1beta1Api.md#list_network_policy_for_all_namespaces
+https://github.com/kubeless/kubeless/pull/126/commits/3526f2b0b0a18629393b5b4a696cc682f4499f9e
+https://engineering.bitnami.com/articles/kubernetes-async-watches.html
+https://gist.github.com/lbolla/3826189
+https://stackoverflow.com/questions/11679040/using-gen-task-with-tornado-for-a-simple-function
