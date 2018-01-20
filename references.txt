@@ -6,3 +6,8 @@ https://github.com/kubeless/kubeless/pull/126/commits/3526f2b0b0a18629393b5b4a69
 https://engineering.bitnami.com/articles/kubernetes-async-watches.html
 https://gist.github.com/lbolla/3826189
 https://stackoverflow.com/questions/11679040/using-gen-task-with-tornado-for-a-simple-function
+https://github.com/rabbitmq/rabbitmq-tutorials/tree/master/python
+https://www.rabbitmq.com/tutorials/tutorial-five-python.html
+http://www.rabbitmq.com/configure.html#config-items
+https://www.howtoforge.com/tutorial/how-to-install-rabbitmq-server-on-centos-7/#starting-rabbitmq
+
