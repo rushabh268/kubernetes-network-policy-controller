@@ -2,10 +2,27 @@ from kubernetes import client, config, watch
 import time
 from tornado.ioloop import IOLoop
 from tornado import gen
+import pika
+import sys
+
+def send_policy_to_node(node_name, iptables):    
+    #To-Do: Add check for rabbitmq status before sending the message
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+    channel = connection.channel()
+    channel.exchange_declare(exchange='topic_logs', exchange_type='topic')
+    routing_key = node_name if node_name != None else 'iptables.info'
+    message = ' '.join(iptables) or 'No action!'
+    channel.basic_publish(exchange='topic_logs', routing_key=routing_key, body=message)
+    print(" [x] Sent %r:%r" % (routing_key, message))
+    connection.close()
 
 def create_new_policy_rules(network_policy, callback):
     print 'Checking policy contents to add iptables based rules'
     print network_policy
+    #node_name and iptables to be determined by parsing network_policy and searching for pods
+    node_name = 'ovs-10.mvdcdev44.us.alcatel-lucent.com'
+    iptables = 'Hello world!'
+    send_policy_to_node(node_name, iptables)
     time.sleep(1)
     callback(network_policy)
 
@@ -33,6 +50,7 @@ def watch_for_policies():
            result = yield gen.Task(create_updated_policy_rules, network_policy_updated)
         print 'result is', result
         IOLoop.instance().stop() 
+
 
 if __name__ == "__main__":
     watch_for_policies()
