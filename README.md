@@ -18,12 +18,14 @@ The design relies on python Kubernetes client which gives an easy python API to 
 //iptables -A FORWARD -m comment --comment "network policy chain for POD podname " -d <podIP> -j KUBE-NWPLCY-podnamehash
 //for each peer pod allowed by an ingress rule in this policy
 //iptables -I KUBE-NWPLCY-podnamehash -s <peer_pod_IP> --dport <dst port> -j ACCEPT
+//iptables -A KUBE-NWPLCY-podnamehash -j REJECT
 //E.g.,
 //iptables -N KUBE-NWPLCY-7UYHFX
 //-A FORWARD -d 10.244.5.4/32 -m comment --comment "nw policy chain for POD redis-slave-132015689-fksjt" -j KUBE-NWPLCY-7UYHFX
 //-A KUBE-NWPLCY-7UYHFX -s 10.244.3.4/32 -p tcp -m tcp --dport 6379 -m comment --comment "nw policy rule for peer POD frontend-88237173-zir4y" -j ACCEPT
 //-A KUBE-NWPLCY-7UYHFX -s 10.244.3.3/32 -p tcp -m tcp --dport 6379 -m comment --comment "nw policy rule for peer POD frontend-88237173-by8e6 -j ACCEPT
 //-A KUBE-NWPLCY-7UYHFX -s 10.244.3.8/32 -p tcp -m tcp --dport 6379 -m comment --comment "nw policy rule for peer POD frontend-88237173-p7up8" -j ACCEPT
+//-A KUBE-NWPLCY-7UYHFX -j REJECT
 ```
 
 7. The assumption is that by default the traffic is dropped/denied in the same namespace
