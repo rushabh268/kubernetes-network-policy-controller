@@ -281,23 +281,33 @@ def create_egress_iptable_rules(egress_info, policy_info):
                 else:
                     policy_del = 'iptables -D KUBE-NWPLCY-'+ src_pod_arr[policy_pod]['pod_name'][-5:] + ' -d '+egress_info['to_ip_block_cidr']+' -m comment --comment \"network policy for POD '+ src_pod_arr[policy_pod]['pod_name'] + ' from  ' + egress_info['to_ip_block_cidr'] + '\" -j ACCEPT'
 
+                policy_two_del = 'iptables -D KUBE-NWPLCY-'+ src_pod_arr[policy_pod]['pod_name'][-5:] + ' -j REJECT'
+                
                 send_policy_to_node(src_pod_arr[policy_pod]['node_name'], policy_del)
                 time.sleep(1)
+                send_policy_to_node(src_pod_arr[policy_pod]['node_name'], policy_two_del)
+                time.sleep(1)
+
 
                 if 'egress_ports' in egress_info:
                     policy = 'iptables -A KUBE-NWPLCY-'+ src_pod_arr[policy_pod]['pod_name'][-5:] + ' -s '+egress_info['to_ip_block_cidr']+' -p ' + str(egress_info['egress_ports'][0]['protocol'].lower())+ ' -m '+str(egress_info['egress_ports'][0]['protocol'].lower())+ ' --sport ' + str(egress_info['egress_ports'][0]['port'])+ ' -m comment --comment \"network policy for POD '+ src_pod_arr[policy_pod]['pod_name'] + ' from' + egress_info['to_ip_block_cidr'] + '\" -j ACCEPT'
 
                 else:
                     policy = 'iptables -A KUBE-NWPLCY-'+ src_pod_arr[policy_pod]['pod_name'][-5:] + ' -s '+egress_info['to_ip_block_cidr']+ ' -m comment --comment \"network policy for POD '+ src_pod_arr[policy_pod]['pod_name'] + ' from ' + egress_info['to_ip_block_cidr'] + '\" -j ACCEPT'
-     
+                policy_two = 'iptables -A KUBE-NWPLCY-'+ src_pod_arr[policy_pod]['pod_name'][-5:] + ' -j REJECT' 
+                
                 send_policy_to_node(src_pod_arr[policy_pod]['node_name'], policy)
                 time.sleep(1)
-
+                send_policy_to_node(src_pod_arr[policy_pod]['node_name'], policy_two)
+                time.sleep(1)  
+              
                 if src_pod_arr[policy_pod]['node_name'] in policy_list:
                     policy_list[src_pod_arr[policy_pod]['node_name']].append(policy_del)
+                    policy_list[src_pod_arr[policy_pod]['node_name']].append(policy_two_del)
                 else:
                     policy_list[src_pod_arr[policy_pod]['node_name']] = []
                     policy_list[src_pod_arr[policy_pod]['node_name']].append(policy_del)
+                    policy_list[src_pod_arr[policy_pod]['node_name']].append(policy_two_del)
 
     return policy_list
  
