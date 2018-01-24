@@ -1,0 +1,14 @@
+To-Do:
+
+1. Create a daemonset for the network policy controller
+2. Handle the scenario for update/delete of a network policy
+3. Use IP sets instead of individual iptable rules which does not scale so well
+4. Reduce the usage of lists and dictionaries
+5. Clean up rules on pod deletion or namespace deletion events
+6. Handle corner cases where ports filed is empty or protocol is empty etc.
+7. Properly delete the iptable rules from all nodes on deletion of network policy
+8. Add a license file to the repo
+9. Add a requirements.txt
+10. Handle multiple network policy events
+
+
