@@ -1,0 +1,363 @@
+
+[root@master kubernetes-network-policy-controller]# python network_policy_controller.py 
+{'raw_object': {u'kind': u'NetworkPolicy', u'spec': {u'policyTypes': [u'Ingress', u'Egress'], u'ingress': [{u'from': [{u'ipBlock': {u'cidr': u'70.70.0.0/16', u'except': [u'70.70.1.0/24']}}, {u'namespaceSelector': {u'matchLabels': {u'project': u'myproject'}}}, {u'podSelector': {u'matchLabels': {u'tier': u'frontend'}}}], u'ports': [{u'protocol': u'TCP', u'port': 6379}]}], u'egress': [{u'to': [{u'ipBlock': {u'cidr': u'10.0.0.0/24'}}], u'ports': [{u'protocol': u'TCP', u'port': 5978}]}], u'podSelector': {u'matchLabels': {u'tier': u'backend'}}}, u'apiVersion': u'extensions/v1beta1', u'metadata': {u'name': u'test-network-policy', u'generation': 1, u'namespace': u'default', u'resourceVersion': u'764252', u'creationTimestamp': u'2018-01-24T05:22:14Z', u'selfLink': u'/apis/extensions/v1beta1/namespaces/default/networkpolicies/test-network-policy', u'uid': u'8987af3d-00c6-11e8-be7d-faaca6020e00'}}, u'object': {'api_version': 'extensions/v1beta1',
+ 'kind': 'NetworkPolicy',
+ 'metadata': {'annotations': None,
+              'cluster_name': None,
+              'creation_timestamp': datetime.datetime(2018, 1, 24, 5, 22, 14, tzinfo=tzutc()),
+              'deletion_grace_period_seconds': None,
+              'deletion_timestamp': None,
+              'finalizers': None,
+              'generate_name': None,
+              'generation': 1,
+              'initializers': None,
+              'labels': None,
+              'name': 'test-network-policy',
+              'namespace': 'default',
+              'owner_references': None,
+              'resource_version': '764252',
+              'self_link': '/apis/extensions/v1beta1/namespaces/default/networkpolicies/test-network-policy',
+              'uid': '8987af3d-00c6-11e8-be7d-faaca6020e00'},
+ 'spec': {'egress': [{'ports': [{'port': 5978, 'protocol': 'TCP'}],
+                      'to': [{'ip_block': {'_except': None,
+                                           'cidr': '10.0.0.0/24'},
+                              'namespace_selector': None,
+                              'pod_selector': None}]}],
+          'ingress': [{'_from': [{'ip_block': {'_except': ['70.70.1.0/24'],
+                                               'cidr': '70.70.0.0/16'},
+                                  'namespace_selector': None,
+                                  'pod_selector': None},
+                                 {'ip_block': None,
+                                  'namespace_selector': {'match_expressions': None,
+                                                         'match_labels': {u'project': 'myproject'}},
+                                  'pod_selector': None},
+                                 {'ip_block': None,
+                                  'namespace_selector': None,
+                                  'pod_selector': {'match_expressions': None,
+                                                   'match_labels': {u'tier': 'frontend'}}}],
+                       'ports': [{'port': 6379, 'protocol': 'TCP'}]}],
+          'pod_selector': {'match_expressions': None,
+                           'match_labels': {u'tier': 'backend'}},
+          'policy_types': ['Ingress', 'Egress']}}, u'type': u'ADDED'}
+Event: ADDED NetworkPolicy test-network-policy
+Checking policy contents to add iptables based rules
+{'ingress': {'except_ip_cidrs': [u'70.70.1.0/24'], 'pod_labels': {u'tier': u'frontend'}, 'namespace_labels': {u'project': u'myproject'}, 'ingress_ports': [{u'protocol': u'TCP', u'port': 6379}], 'from_ip_block_cidr': u'70.70.0.0/16'}, 'egress': {'to_ip_block_cidr': u'10.0.0.0/24', 'egress_ports': [{u'protocol': u'TCP', u'port': 5978}]}}
+network_policy
+Network policy has both ingress and egress
+{'except_ip_cidrs': [u'70.70.1.0/24'], 'pod_labels': {u'tier': u'frontend'}, 'namespace_labels': {u'project': u'myproject'}, 'ingress_ports': [{u'protocol': u'TCP', u'port': 6379}], 'from_ip_block_cidr': u'70.70.0.0/16'} {'pod_selector_labels': {u'tier': u'backend'}, 'namespace': u'default', 'policy_type': 'network_policy'}
+[{'pod_ip': '70.70.1.6', 'pod_name': 'frontend-67f65745c-47hpg', 'node_name': 'node.kubernetes.localhost.rushabh.com'}, {'pod_ip': '70.70.1.3', 'pod_name': 'frontend-67f65745c-r8w2m', 'node_name': 'node.kubernetes.localhost.rushabh.com'}, {'pod_ip': '70.70.1.5', 'pod_name': 'frontend-67f65745c-snjn8', 'node_name': 'node.kubernetes.localhost.rushabh.com'}] [{'pod_ip': '70.70.1.8', 'pod_name': 'redis-master-585798d8ff-t54lc', 'node_name': 'node.kubernetes.localhost.rushabh.com'}, {'pod_ip': '70.70.1.7', 'pod_name': 'redis-slave-865486c9df-cpj2x', 'node_name': 'node.kubernetes.localhost.rushabh.com'}, {'pod_ip': '70.70.1.4', 'pod_name': 'redis-slave-865486c9df-pg7wq', 'node_name': 'node.kubernetes.localhost.rushabh.com'}] []
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':'iptables -D FORWARD -d 70.70.1.6 -m comment --comment " network policy chain for POD redis-master-585798d8ff-t54lc" -j KUBE-NWPLCY-t54lc'
+iptables -D FORWARD -d 70.70.1.6 -m comment --comment " network policy chain for POD redis-master-585798d8ff-t54lc" -j KUBE-NWPLCY-t54lc
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':'iptables -N KUBE-NWPLCY-t54lc'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':'iptables -A FORWARD -d 70.70.1.6 -m comment --comment " network policy chain for POD redis-master-585798d8ff-t54lc" -j KUBE-NWPLCY-t54lc'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':'iptables -A FORWARD -d 70.70.1.6 -m comment --comment " network policy chain for POD redis-master-585798d8ff-t54lc" -j KUBE-NWPLCY-t54lc'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':'iptables -D KUBE-NWPLCY-t54lc -s 70.70.1.6 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-master-585798d8ff-t54lc from podfrontend-67f65745c-47hpg" -j ACCEPT'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':'iptables -A KUBE-NWPLCY-t54lc -s 70.70.1.6 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-master-585798d8ff-t54lc from podfrontend-67f65745c-47hpg" -j ACCEPT'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':'iptables -D KUBE-NWPLCY-t54lc -s 70.70.1.3 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-master-585798d8ff-t54lc from podfrontend-67f65745c-r8w2m" -j ACCEPT'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':'iptables -A KUBE-NWPLCY-t54lc -s 70.70.1.3 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-master-585798d8ff-t54lc from podfrontend-67f65745c-r8w2m" -j ACCEPT'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':'iptables -D KUBE-NWPLCY-t54lc -s 70.70.1.5 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-master-585798d8ff-t54lc from podfrontend-67f65745c-snjn8" -j ACCEPT'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':'iptables -A KUBE-NWPLCY-t54lc -s 70.70.1.5 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-master-585798d8ff-t54lc from podfrontend-67f65745c-snjn8" -j ACCEPT'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':'iptables -D FORWARD -d 70.70.1.3 -m comment --comment " network policy chain for POD redis-slave-865486c9df-cpj2x" -j KUBE-NWPLCY-cpj2x'
+iptables -D FORWARD -d 70.70.1.3 -m comment --comment " network policy chain for POD redis-slave-865486c9df-cpj2x" -j KUBE-NWPLCY-cpj2x
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':'iptables -N KUBE-NWPLCY-cpj2x'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':'iptables -A FORWARD -d 70.70.1.3 -m comment --comment " network policy chain for POD redis-slave-865486c9df-cpj2x" -j KUBE-NWPLCY-cpj2x'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':'iptables -A FORWARD -d 70.70.1.3 -m comment --comment " network policy chain for POD redis-slave-865486c9df-cpj2x" -j KUBE-NWPLCY-cpj2x'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':'iptables -D KUBE-NWPLCY-cpj2x -s 70.70.1.6 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-cpj2x from podfrontend-67f65745c-47hpg" -j ACCEPT'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':'iptables -A KUBE-NWPLCY-cpj2x -s 70.70.1.6 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-cpj2x from podfrontend-67f65745c-47hpg" -j ACCEPT'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':'iptables -D KUBE-NWPLCY-cpj2x -s 70.70.1.3 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-cpj2x from podfrontend-67f65745c-r8w2m" -j ACCEPT'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':'iptables -A KUBE-NWPLCY-cpj2x -s 70.70.1.3 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-cpj2x from podfrontend-67f65745c-r8w2m" -j ACCEPT'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':'iptables -D KUBE-NWPLCY-cpj2x -s 70.70.1.5 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-cpj2x from podfrontend-67f65745c-snjn8" -j ACCEPT'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':'iptables -A KUBE-NWPLCY-cpj2x -s 70.70.1.5 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-cpj2x from podfrontend-67f65745c-snjn8" -j ACCEPT'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':'iptables -D FORWARD -d 70.70.1.5 -m comment --comment " network policy chain for POD redis-slave-865486c9df-pg7wq" -j KUBE-NWPLCY-pg7wq'
+iptables -D FORWARD -d 70.70.1.5 -m comment --comment " network policy chain for POD redis-slave-865486c9df-pg7wq" -j KUBE-NWPLCY-pg7wq
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':'iptables -N KUBE-NWPLCY-pg7wq'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':'iptables -A FORWARD -d 70.70.1.5 -m comment --comment " network policy chain for POD redis-slave-865486c9df-pg7wq" -j KUBE-NWPLCY-pg7wq'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':'iptables -A FORWARD -d 70.70.1.5 -m comment --comment " network policy chain for POD redis-slave-865486c9df-pg7wq" -j KUBE-NWPLCY-pg7wq'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':'iptables -D KUBE-NWPLCY-pg7wq -s 70.70.1.6 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from podfrontend-67f65745c-47hpg" -j ACCEPT'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':'iptables -A KUBE-NWPLCY-pg7wq -s 70.70.1.6 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from podfrontend-67f65745c-47hpg" -j ACCEPT'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':'iptables -D KUBE-NWPLCY-pg7wq -s 70.70.1.3 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from podfrontend-67f65745c-r8w2m" -j ACCEPT'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':'iptables -A KUBE-NWPLCY-pg7wq -s 70.70.1.3 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from podfrontend-67f65745c-r8w2m" -j ACCEPT'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':'iptables -D KUBE-NWPLCY-pg7wq -s 70.70.1.5 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from podfrontend-67f65745c-snjn8" -j ACCEPT'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':'iptables -A KUBE-NWPLCY-pg7wq -s 70.70.1.5 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from podfrontend-67f65745c-snjn8" -j ACCEPT'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':u'iptables -D KUBE-NWPLCY-pg7wq -s 70.70.0.0/16 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.0.0/16" -j ACCEPT'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':u'iptables -D KUBE-NWPLCY-pg7wq -s 70.70.1.0/24 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.1.0/24" -j DROP'
+iptables -A KUBE-NWPLCY-pg7wq -s 70.70.0.0/16 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.0.0/16" -j ACCEPT
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':u'iptables -A KUBE-NWPLCY-pg7wq -s 70.70.0.0/16 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.0.0/16" -j ACCEPT'
+iptables -A KUBE-NWPLCY-pg7wq -s 70.70.1.0/24 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.1.0/24" -j DROP
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':u'iptables -A KUBE-NWPLCY-pg7wq -s 70.70.1.0/24 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.1.0/24" -j DROP'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':u'iptables -D KUBE-NWPLCY-pg7wq -s 70.70.0.0/16 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.0.0/16" -j ACCEPT'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':u'iptables -D KUBE-NWPLCY-pg7wq -s 70.70.1.0/24 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.1.0/24" -j DROP'
+iptables -A KUBE-NWPLCY-pg7wq -s 70.70.0.0/16 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.0.0/16" -j ACCEPT
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':u'iptables -A KUBE-NWPLCY-pg7wq -s 70.70.0.0/16 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.0.0/16" -j ACCEPT'
+iptables -A KUBE-NWPLCY-pg7wq -s 70.70.1.0/24 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.1.0/24" -j DROP
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':u'iptables -A KUBE-NWPLCY-pg7wq -s 70.70.1.0/24 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.1.0/24" -j DROP'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':u'iptables -D KUBE-NWPLCY-pg7wq -s 70.70.0.0/16 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.0.0/16" -j ACCEPT'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':u'iptables -D KUBE-NWPLCY-pg7wq -s 70.70.1.0/24 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.1.0/24" -j DROP'
+iptables -A KUBE-NWPLCY-pg7wq -s 70.70.0.0/16 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.0.0/16" -j ACCEPT
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':u'iptables -A KUBE-NWPLCY-pg7wq -s 70.70.0.0/16 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.0.0/16" -j ACCEPT'
+iptables -A KUBE-NWPLCY-pg7wq -s 70.70.1.0/24 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.1.0/24" -j DROP
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':u'iptables -A KUBE-NWPLCY-pg7wq -s 70.70.1.0/24 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.1.0/24" -j DROP'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':u'iptables -D KUBE-NWPLCY-t54lc -d 10.0.0.0/24 -p tcp -m tcp --sport 5978 -m comment --comment "network policy for POD redis-master-585798d8ff-t54lc from10.0.0.0/24" -j ACCEPT'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':u'iptables -A KUBE-NWPLCY-t54lc -s 10.0.0.0/24 -p tcp -m tcp --sport 5978 -m comment --comment "network policy for POD redis-master-585798d8ff-t54lc from10.0.0.0/24" -j ACCEPT'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':u'iptables -D KUBE-NWPLCY-cpj2x -d 10.0.0.0/24 -p tcp -m tcp --sport 5978 -m comment --comment "network policy for POD redis-slave-865486c9df-cpj2x from10.0.0.0/24" -j ACCEPT'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':u'iptables -A KUBE-NWPLCY-cpj2x -s 10.0.0.0/24 -p tcp -m tcp --sport 5978 -m comment --comment "network policy for POD redis-slave-865486c9df-cpj2x from10.0.0.0/24" -j ACCEPT'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':u'iptables -D KUBE-NWPLCY-pg7wq -d 10.0.0.0/24 -p tcp -m tcp --sport 5978 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from10.0.0.0/24" -j ACCEPT'
+ [x] Sent 'node.kubernetes.localhost.rushabh.com':u'iptables -A KUBE-NWPLCY-pg7wq -s 10.0.0.0/24 -p tcp -m tcp --sport 5978 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from10.0.0.0/24" -j ACCEPT'
+
+ 
+ 
+ 
+ 
+ [root@master ~]# python node_agent.py 
+ [*] Waiting for the iptable command.
+
+
+
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -D FORWARD -d 70.70.1.6 -m comment --comment " network policy chain for POD redis-master-585798d8ff-t54lc" -j KUBE-NWPLCY-t54lc'
+Adding policy: iptables -D FORWARD -d 70.70.1.6 -m comment --comment " network policy chain for POD redis-master-585798d8ff-t54lc" -j KUBE-NWPLCY-t54lc
+iptables: No chain/target/match by that name.
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -N KUBE-NWPLCY-t54lc'
+Adding policy: iptables -N KUBE-NWPLCY-t54lc
+iptables: Chain already exists.
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -A FORWARD -d 70.70.1.6 -m comment --comment " network policy chain for POD redis-master-585798d8ff-t54lc" -j KUBE-NWPLCY-t54lc'
+Adding policy: iptables -A FORWARD -d 70.70.1.6 -m comment --comment " network policy chain for POD redis-master-585798d8ff-t54lc" -j KUBE-NWPLCY-t54lc
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -A FORWARD -d 70.70.1.6 -m comment --comment " network policy chain for POD redis-master-585798d8ff-t54lc" -j KUBE-NWPLCY-t54lc'
+Adding policy: iptables -A FORWARD -d 70.70.1.6 -m comment --comment " network policy chain for POD redis-master-585798d8ff-t54lc" -j KUBE-NWPLCY-t54lc
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -D KUBE-NWPLCY-t54lc -s 70.70.1.6 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-master-585798d8ff-t54lc from podfrontend-67f65745c-47hpg" -j ACCEPT'
+Adding policy: iptables -D KUBE-NWPLCY-t54lc -s 70.70.1.6 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-master-585798d8ff-t54lc from podfrontend-67f65745c-47hpg" -j ACCEPT
+iptables: Bad rule (does a matching rule exist in that chain?).
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -A KUBE-NWPLCY-t54lc -s 70.70.1.6 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-master-585798d8ff-t54lc from podfrontend-67f65745c-47hpg" -j ACCEPT'
+Adding policy: iptables -A KUBE-NWPLCY-t54lc -s 70.70.1.6 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-master-585798d8ff-t54lc from podfrontend-67f65745c-47hpg" -j ACCEPT
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -D KUBE-NWPLCY-t54lc -s 70.70.1.3 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-master-585798d8ff-t54lc from podfrontend-67f65745c-r8w2m" -j ACCEPT'
+Adding policy: iptables -D KUBE-NWPLCY-t54lc -s 70.70.1.3 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-master-585798d8ff-t54lc from podfrontend-67f65745c-r8w2m" -j ACCEPT
+iptables: Bad rule (does a matching rule exist in that chain?).
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -A KUBE-NWPLCY-t54lc -s 70.70.1.3 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-master-585798d8ff-t54lc from podfrontend-67f65745c-r8w2m" -j ACCEPT'
+Adding policy: iptables -A KUBE-NWPLCY-t54lc -s 70.70.1.3 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-master-585798d8ff-t54lc from podfrontend-67f65745c-r8w2m" -j ACCEPT
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -D KUBE-NWPLCY-t54lc -s 70.70.1.5 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-master-585798d8ff-t54lc from podfrontend-67f65745c-snjn8" -j ACCEPT'
+Adding policy: iptables -D KUBE-NWPLCY-t54lc -s 70.70.1.5 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-master-585798d8ff-t54lc from podfrontend-67f65745c-snjn8" -j ACCEPT
+iptables: Bad rule (does a matching rule exist in that chain?).
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -A KUBE-NWPLCY-t54lc -s 70.70.1.5 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-master-585798d8ff-t54lc from podfrontend-67f65745c-snjn8" -j ACCEPT'
+Adding policy: iptables -A KUBE-NWPLCY-t54lc -s 70.70.1.5 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-master-585798d8ff-t54lc from podfrontend-67f65745c-snjn8" -j ACCEPT
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -D FORWARD -d 70.70.1.3 -m comment --comment " network policy chain for POD redis-slave-865486c9df-cpj2x" -j KUBE-NWPLCY-cpj2x'
+Adding policy: iptables -D FORWARD -d 70.70.1.3 -m comment --comment " network policy chain for POD redis-slave-865486c9df-cpj2x" -j KUBE-NWPLCY-cpj2x
+iptables: No chain/target/match by that name.
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -N KUBE-NWPLCY-cpj2x'
+Adding policy: iptables -N KUBE-NWPLCY-cpj2x
+iptables: Chain already exists.
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -A FORWARD -d 70.70.1.3 -m comment --comment " network policy chain for POD redis-slave-865486c9df-cpj2x" -j KUBE-NWPLCY-cpj2x'
+Adding policy: iptables -A FORWARD -d 70.70.1.3 -m comment --comment " network policy chain for POD redis-slave-865486c9df-cpj2x" -j KUBE-NWPLCY-cpj2x
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -A FORWARD -d 70.70.1.3 -m comment --comment " network policy chain for POD redis-slave-865486c9df-cpj2x" -j KUBE-NWPLCY-cpj2x'
+Adding policy: iptables -A FORWARD -d 70.70.1.3 -m comment --comment " network policy chain for POD redis-slave-865486c9df-cpj2x" -j KUBE-NWPLCY-cpj2x
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -D KUBE-NWPLCY-cpj2x -s 70.70.1.6 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-cpj2x from podfrontend-67f65745c-47hpg" -j ACCEPT'
+Adding policy: iptables -D KUBE-NWPLCY-cpj2x -s 70.70.1.6 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-cpj2x from podfrontend-67f65745c-47hpg" -j ACCEPT
+iptables: Bad rule (does a matching rule exist in that chain?).
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -A KUBE-NWPLCY-cpj2x -s 70.70.1.6 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-cpj2x from podfrontend-67f65745c-47hpg" -j ACCEPT'
+Adding policy: iptables -A KUBE-NWPLCY-cpj2x -s 70.70.1.6 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-cpj2x from podfrontend-67f65745c-47hpg" -j ACCEPT
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -D KUBE-NWPLCY-cpj2x -s 70.70.1.3 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-cpj2x from podfrontend-67f65745c-r8w2m" -j ACCEPT'
+Adding policy: iptables -D KUBE-NWPLCY-cpj2x -s 70.70.1.3 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-cpj2x from podfrontend-67f65745c-r8w2m" -j ACCEPT
+iptables: Bad rule (does a matching rule exist in that chain?).
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -A KUBE-NWPLCY-cpj2x -s 70.70.1.3 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-cpj2x from podfrontend-67f65745c-r8w2m" -j ACCEPT'
+Adding policy: iptables -A KUBE-NWPLCY-cpj2x -s 70.70.1.3 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-cpj2x from podfrontend-67f65745c-r8w2m" -j ACCEPT
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -D KUBE-NWPLCY-cpj2x -s 70.70.1.5 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-cpj2x from podfrontend-67f65745c-snjn8" -j ACCEPT'
+Adding policy: iptables -D KUBE-NWPLCY-cpj2x -s 70.70.1.5 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-cpj2x from podfrontend-67f65745c-snjn8" -j ACCEPT
+iptables: Bad rule (does a matching rule exist in that chain?).
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -A KUBE-NWPLCY-cpj2x -s 70.70.1.5 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-cpj2x from podfrontend-67f65745c-snjn8" -j ACCEPT'
+Adding policy: iptables -A KUBE-NWPLCY-cpj2x -s 70.70.1.5 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-cpj2x from podfrontend-67f65745c-snjn8" -j ACCEPT
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -D FORWARD -d 70.70.1.5 -m comment --comment " network policy chain for POD redis-slave-865486c9df-pg7wq" -j KUBE-NWPLCY-pg7wq'
+Adding policy: iptables -D FORWARD -d 70.70.1.5 -m comment --comment " network policy chain for POD redis-slave-865486c9df-pg7wq" -j KUBE-NWPLCY-pg7wq
+iptables: No chain/target/match by that name.
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -N KUBE-NWPLCY-pg7wq'
+Adding policy: iptables -N KUBE-NWPLCY-pg7wq
+iptables: Chain already exists.
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -A FORWARD -d 70.70.1.5 -m comment --comment " network policy chain for POD redis-slave-865486c9df-pg7wq" -j KUBE-NWPLCY-pg7wq'
+Adding policy: iptables -A FORWARD -d 70.70.1.5 -m comment --comment " network policy chain for POD redis-slave-865486c9df-pg7wq" -j KUBE-NWPLCY-pg7wq
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -A FORWARD -d 70.70.1.5 -m comment --comment " network policy chain for POD redis-slave-865486c9df-pg7wq" -j KUBE-NWPLCY-pg7wq'
+Adding policy: iptables -A FORWARD -d 70.70.1.5 -m comment --comment " network policy chain for POD redis-slave-865486c9df-pg7wq" -j KUBE-NWPLCY-pg7wq
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -D KUBE-NWPLCY-pg7wq -s 70.70.1.6 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from podfrontend-67f65745c-47hpg" -j ACCEPT'
+Adding policy: iptables -D KUBE-NWPLCY-pg7wq -s 70.70.1.6 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from podfrontend-67f65745c-47hpg" -j ACCEPT
+iptables: Bad rule (does a matching rule exist in that chain?).
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -A KUBE-NWPLCY-pg7wq -s 70.70.1.6 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from podfrontend-67f65745c-47hpg" -j ACCEPT'
+Adding policy: iptables -A KUBE-NWPLCY-pg7wq -s 70.70.1.6 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from podfrontend-67f65745c-47hpg" -j ACCEPT
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -D KUBE-NWPLCY-pg7wq -s 70.70.1.3 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from podfrontend-67f65745c-r8w2m" -j ACCEPT'
+Adding policy: iptables -D KUBE-NWPLCY-pg7wq -s 70.70.1.3 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from podfrontend-67f65745c-r8w2m" -j ACCEPT
+iptables: Bad rule (does a matching rule exist in that chain?).
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -A KUBE-NWPLCY-pg7wq -s 70.70.1.3 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from podfrontend-67f65745c-r8w2m" -j ACCEPT'
+Adding policy: iptables -A KUBE-NWPLCY-pg7wq -s 70.70.1.3 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from podfrontend-67f65745c-r8w2m" -j ACCEPT
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -D KUBE-NWPLCY-pg7wq -s 70.70.1.5 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from podfrontend-67f65745c-snjn8" -j ACCEPT'
+Adding policy: iptables -D KUBE-NWPLCY-pg7wq -s 70.70.1.5 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from podfrontend-67f65745c-snjn8" -j ACCEPT
+iptables: Bad rule (does a matching rule exist in that chain?).
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -A KUBE-NWPLCY-pg7wq -s 70.70.1.5 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from podfrontend-67f65745c-snjn8" -j ACCEPT'
+Adding policy: iptables -A KUBE-NWPLCY-pg7wq -s 70.70.1.5 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from podfrontend-67f65745c-snjn8" -j ACCEPT
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -D KUBE-NWPLCY-pg7wq -s 70.70.0.0/16 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.0.0/16" -j ACCEPT'
+Adding policy: iptables -D KUBE-NWPLCY-pg7wq -s 70.70.0.0/16 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.0.0/16" -j ACCEPT
+iptables: Bad rule (does a matching rule exist in that chain?).
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -D KUBE-NWPLCY-pg7wq -s 70.70.1.0/24 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.1.0/24" -j DROP'
+Adding policy: iptables -D KUBE-NWPLCY-pg7wq -s 70.70.1.0/24 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.1.0/24" -j DROP
+iptables: Bad rule (does a matching rule exist in that chain?).
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -A KUBE-NWPLCY-pg7wq -s 70.70.0.0/16 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.0.0/16" -j ACCEPT'
+Adding policy: iptables -A KUBE-NWPLCY-pg7wq -s 70.70.0.0/16 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.0.0/16" -j ACCEPT
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -A KUBE-NWPLCY-pg7wq -s 70.70.1.0/24 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.1.0/24" -j DROP'
+Adding policy: iptables -A KUBE-NWPLCY-pg7wq -s 70.70.1.0/24 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.1.0/24" -j DROP
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -D KUBE-NWPLCY-pg7wq -s 70.70.0.0/16 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.0.0/16" -j ACCEPT'
+Adding policy: iptables -D KUBE-NWPLCY-pg7wq -s 70.70.0.0/16 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.0.0/16" -j ACCEPT
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -D KUBE-NWPLCY-pg7wq -s 70.70.1.0/24 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.1.0/24" -j DROP'
+Adding policy: iptables -D KUBE-NWPLCY-pg7wq -s 70.70.1.0/24 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.1.0/24" -j DROP
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -A KUBE-NWPLCY-pg7wq -s 70.70.0.0/16 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.0.0/16" -j ACCEPT'
+Adding policy: iptables -A KUBE-NWPLCY-pg7wq -s 70.70.0.0/16 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.0.0/16" -j ACCEPT
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -A KUBE-NWPLCY-pg7wq -s 70.70.1.0/24 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.1.0/24" -j DROP'
+Adding policy: iptables -A KUBE-NWPLCY-pg7wq -s 70.70.1.0/24 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.1.0/24" -j DROP
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -D KUBE-NWPLCY-pg7wq -s 70.70.0.0/16 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.0.0/16" -j ACCEPT'
+Adding policy: iptables -D KUBE-NWPLCY-pg7wq -s 70.70.0.0/16 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.0.0/16" -j ACCEPT
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -D KUBE-NWPLCY-pg7wq -s 70.70.1.0/24 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.1.0/24" -j DROP'
+Adding policy: iptables -D KUBE-NWPLCY-pg7wq -s 70.70.1.0/24 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.1.0/24" -j DROP
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -A KUBE-NWPLCY-pg7wq -s 70.70.0.0/16 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.0.0/16" -j ACCEPT'
+Adding policy: iptables -A KUBE-NWPLCY-pg7wq -s 70.70.0.0/16 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.0.0/16" -j ACCEPT
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -A KUBE-NWPLCY-pg7wq -s 70.70.1.0/24 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.1.0/24" -j DROP'
+Adding policy: iptables -A KUBE-NWPLCY-pg7wq -s 70.70.1.0/24 -p tcp -m tcp --dport 6379 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from70.70.1.0/24" -j DROP
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -D KUBE-NWPLCY-t54lc -d 10.0.0.0/24 -p tcp -m tcp --sport 5978 -m comment --comment "network policy for POD redis-master-585798d8ff-t54lc from10.0.0.0/24" -j ACCEPT'
+Adding policy: iptables -D KUBE-NWPLCY-t54lc -d 10.0.0.0/24 -p tcp -m tcp --sport 5978 -m comment --comment "network policy for POD redis-master-585798d8ff-t54lc from10.0.0.0/24" -j ACCEPT
+iptables: Bad rule (does a matching rule exist in that chain?).
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -A KUBE-NWPLCY-t54lc -s 10.0.0.0/24 -p tcp -m tcp --sport 5978 -m comment --comment "network policy for POD redis-master-585798d8ff-t54lc from10.0.0.0/24" -j ACCEPT'
+Adding policy: iptables -A KUBE-NWPLCY-t54lc -s 10.0.0.0/24 -p tcp -m tcp --sport 5978 -m comment --comment "network policy for POD redis-master-585798d8ff-t54lc from10.0.0.0/24" -j ACCEPT
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -D KUBE-NWPLCY-cpj2x -d 10.0.0.0/24 -p tcp -m tcp --sport 5978 -m comment --comment "network policy for POD redis-slave-865486c9df-cpj2x from10.0.0.0/24" -j ACCEPT'
+Adding policy: iptables -D KUBE-NWPLCY-cpj2x -d 10.0.0.0/24 -p tcp -m tcp --sport 5978 -m comment --comment "network policy for POD redis-slave-865486c9df-cpj2x from10.0.0.0/24" -j ACCEPT
+iptables: Bad rule (does a matching rule exist in that chain?).
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -A KUBE-NWPLCY-cpj2x -s 10.0.0.0/24 -p tcp -m tcp --sport 5978 -m comment --comment "network policy for POD redis-slave-865486c9df-cpj2x from10.0.0.0/24" -j ACCEPT'
+Adding policy: iptables -A KUBE-NWPLCY-cpj2x -s 10.0.0.0/24 -p tcp -m tcp --sport 5978 -m comment --comment "network policy for POD redis-slave-865486c9df-cpj2x from10.0.0.0/24" -j ACCEPT
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -D KUBE-NWPLCY-pg7wq -d 10.0.0.0/24 -p tcp -m tcp --sport 5978 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from10.0.0.0/24" -j ACCEPT'
+Adding policy: iptables -D KUBE-NWPLCY-pg7wq -d 10.0.0.0/24 -p tcp -m tcp --sport 5978 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from10.0.0.0/24" -j ACCEPT
+iptables: Bad rule (does a matching rule exist in that chain?).
+
+ [x] 'node.kubernetes.localhost.rushabh.com':'iptables -A KUBE-NWPLCY-pg7wq -s 10.0.0.0/24 -p tcp -m tcp --sport 5978 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from10.0.0.0/24" -j ACCEPT'
+Adding policy: iptables -A KUBE-NWPLCY-pg7wq -s 10.0.0.0/24 -p tcp -m tcp --sport 5978 -m comment --comment "network policy for POD redis-slave-865486c9df-pg7wq from10.0.0.0/24" -j ACCEPT
+
+
+
+[root@master ~]# iptables -nvL
+Chain INPUT (policy ACCEPT 242 packets, 104K bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+  16M 9648M KUBE-SERVICES  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* kubernetes service portals */
+  16M 9683M KUBE-FIREWALL  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     udp  --  virbr0 *       0.0.0.0/0            0.0.0.0/0            udp dpt:53
+    0     0 ACCEPT     tcp  --  virbr0 *       0.0.0.0/0            0.0.0.0/0            tcp dpt:53
+    0     0 ACCEPT     udp  --  virbr0 *       0.0.0.0/0            0.0.0.0/0            udp dpt:67
+    0     0 ACCEPT     tcp  --  virbr0 *       0.0.0.0/0            0.0.0.0/0            tcp dpt:67
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+1852K  402M KUBE-FORWARD  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* kubernetes forward rules */
+ 485K   34M DOCKER-ISOLATION  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  *      virbr0  0.0.0.0/0            192.168.122.0/24     ctstate RELATED,ESTABLISHED
+    0     0 ACCEPT     all  --  virbr0 *       192.168.122.0/24     0.0.0.0/0           
+    0     0 ACCEPT     all  --  virbr0 virbr0  0.0.0.0/0            0.0.0.0/0           
+    0     0 REJECT     all  --  *      virbr0  0.0.0.0/0            0.0.0.0/0            reject-with icmp-port-unreachable
+    0     0 REJECT     all  --  virbr0 *       0.0.0.0/0            0.0.0.0/0            reject-with icmp-port-unreachable
+    0     0 DOCKER     all  --  *      docker0  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  *      docker0  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+    0     0 ACCEPT     all  --  docker0 !docker0  0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  docker0 docker0  0.0.0.0/0            0.0.0.0/0           
+ 485K   34M ACCEPT     all  --  *      *       70.70.0.0/16         0.0.0.0/0           
+    0     0 ACCEPT     all  --  *      *       0.0.0.0/0            70.70.0.0/16        
+    0     0 KUBE-NWPLCY-t54lc  all  --  *      *       0.0.0.0/0            70.70.1.6            /*  network policy chain for POD redis-master-585798d8ff-t54lc */
+    0     0 KUBE-NWPLCY-t54lc  all  --  *      *       0.0.0.0/0            70.70.1.6            /*  network policy chain for POD redis-master-585798d8ff-t54lc */
+    0     0 KUBE-NWPLCY-cpj2x  all  --  *      *       0.0.0.0/0            70.70.1.3            /*  network policy chain for POD redis-slave-865486c9df-cpj2x */
+    0     0 KUBE-NWPLCY-cpj2x  all  --  *      *       0.0.0.0/0            70.70.1.3            /*  network policy chain for POD redis-slave-865486c9df-cpj2x */
+    0     0 KUBE-NWPLCY-pg7wq  all  --  *      *       0.0.0.0/0            70.70.1.5            /*  network policy chain for POD redis-slave-865486c9df-pg7wq */
+    0     0 KUBE-NWPLCY-pg7wq  all  --  *      *       0.0.0.0/0            70.70.1.5            /*  network policy chain for POD redis-slave-865486c9df-pg7wq */
+
+Chain OUTPUT (policy ACCEPT 69 packets, 8224 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+3911K  361M KUBE-SERVICES  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* kubernetes service portals */
+3920K  361M KUBE-FIREWALL  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     udp  --  *      virbr0  0.0.0.0/0            0.0.0.0/0            udp dpt:68
+
+Chain DOCKER (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain DOCKER-ISOLATION (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+ 485K   34M RETURN     all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain KUBE-FIREWALL (2 references)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* kubernetes firewall for dropping marked packets */ mark match 0x8000/0x8000
+
+Chain KUBE-FORWARD (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* kubernetes forwarding rules */ mark match 0x4000/0x4000
+   13   760 ACCEPT     all  --  *      *       70.70.0.0/16         0.0.0.0/0            /* kubernetes forwarding conntrack pod source rule */ ctstate RELATED,ESTABLISHED
+   13  5870 ACCEPT     all  --  *      *       0.0.0.0/0            70.70.0.0/16         /* kubernetes forwarding conntrack pod destination rule */ ctstate RELATED,ESTABLISHED
+
+Chain KUBE-NWPLCY-cpj2x (2 references)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 ACCEPT     tcp  --  *      *       70.70.1.6            0.0.0.0/0            tcp dpt:6379 /* network policy for POD redis-slave-865486c9df-cpj2x from podfrontend-67f65745c-47hpg */
+    0     0 ACCEPT     tcp  --  *      *       70.70.1.3            0.0.0.0/0            tcp dpt:6379 /* network policy for POD redis-slave-865486c9df-cpj2x from podfrontend-67f65745c-r8w2m */
+    0     0 ACCEPT     tcp  --  *      *       70.70.1.5            0.0.0.0/0            tcp dpt:6379 /* network policy for POD redis-slave-865486c9df-cpj2x from podfrontend-67f65745c-snjn8 */
+    0     0 ACCEPT     tcp  --  *      *       10.0.0.0/24          0.0.0.0/0            tcp spt:5978 /* network policy for POD redis-slave-865486c9df-cpj2x from10.0.0.0/24 */
+
+Chain KUBE-NWPLCY-pg7wq (2 references)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 ACCEPT     tcp  --  *      *       70.70.1.6            0.0.0.0/0            tcp dpt:6379 /* network policy for POD redis-slave-865486c9df-pg7wq from podfrontend-67f65745c-47hpg */
+    0     0 ACCEPT     tcp  --  *      *       70.70.1.3            0.0.0.0/0            tcp dpt:6379 /* network policy for POD redis-slave-865486c9df-pg7wq from podfrontend-67f65745c-r8w2m */
+    0     0 ACCEPT     tcp  --  *      *       70.70.1.5            0.0.0.0/0            tcp dpt:6379 /* network policy for POD redis-slave-865486c9df-pg7wq from podfrontend-67f65745c-snjn8 */
+    0     0 ACCEPT     tcp  --  *      *       70.70.0.0/16         0.0.0.0/0            tcp dpt:6379 /* network policy for POD redis-slave-865486c9df-pg7wq from70.70.0.0/16 */
+    0     0 DROP       tcp  --  *      *       70.70.1.0/24         0.0.0.0/0            tcp dpt:6379 /* network policy for POD redis-slave-865486c9df-pg7wq from70.70.1.0/24 */
+    0     0 ACCEPT     tcp  --  *      *       10.0.0.0/24          0.0.0.0/0            tcp spt:5978 /* network policy for POD redis-slave-865486c9df-pg7wq from10.0.0.0/24 */
+
+Chain KUBE-NWPLCY-t54lc (2 references)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 ACCEPT     tcp  --  *      *       70.70.1.6            0.0.0.0/0            tcp dpt:6379 /* network policy for POD redis-master-585798d8ff-t54lc from podfrontend-67f65745c-47hpg */
+    0     0 ACCEPT     tcp  --  *      *       70.70.1.3            0.0.0.0/0            tcp dpt:6379 /* network policy for POD redis-master-585798d8ff-t54lc from podfrontend-67f65745c-r8w2m */
+    0     0 ACCEPT     tcp  --  *      *       70.70.1.5            0.0.0.0/0            tcp dpt:6379 /* network policy for POD redis-master-585798d8ff-t54lc from podfrontend-67f65745c-snjn8 */
+    0     0 ACCEPT     tcp  --  *      *       10.0.0.0/24          0.0.0.0/0            tcp spt:5978 /* network policy for POD redis-master-585798d8ff-t54lc from10.0.0.0/24 */
+
+Chain KUBE-SERVICES (2 references)
+ pkts bytes target     prot opt in     out     source               destination         
+ 
