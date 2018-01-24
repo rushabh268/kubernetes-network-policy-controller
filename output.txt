@@ -359,5 +359,5 @@ Chain KUBE-NWPLCY-t54lc (2 references)
     0     0 ACCEPT     tcp  --  *      *       10.0.0.0/24          0.0.0.0/0            tcp spt:5978 /* network policy for POD redis-master-585798d8ff-t54lc from10.0.0.0/24 */
 
 Chain KUBE-SERVICES (2 references)
- pkts bytes target     prot opt in     out     source               destination         
+ pkts bytes target     prot opt in     out     source               destination     
  
