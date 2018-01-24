@@ -13,4 +13,5 @@ https://www.howtoforge.com/tutorial/how-to-install-rabbitmq-server-on-centos-7/#
 https://kubernetes.io/docs/concepts/services-networking/network-policies/
 https://kubernetes.io/docs/tasks/administer-cluster/declare-network-policy/
 https://cloudnativelabs.github.io/post/2017-05-1-kube-network-policies/
+https://github.com/chiradeep/kube-policy-manager/blob/master/controller.go
 
