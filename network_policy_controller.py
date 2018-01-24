@@ -12,7 +12,7 @@ def send_policy_to_node(node_name, iptables):
     channel = connection.channel()
     channel.exchange_declare(exchange='topic_logs', exchange_type='topic')
     routing_key = node_name if node_name != None else 'iptables.info'
-    message = ' '.join(iptables) or 'No action!'
+    message = ''.join(iptables) or 'No action!'
     channel.basic_publish(exchange='topic_logs', routing_key=routing_key, body=message)
     print(" [x] Sent %r:%r" % (routing_key, message))
     connection.close()
@@ -70,12 +70,16 @@ def create_new_policy_rules(network_policy, uid, callback):
     policy_list_ingress = {}
     policy_list_egress = {}
 
+    print policy_info['policy_type']
     if policy_info['policy_type'] == 'network_policy':
+        print "Network policy has both ingress and egress"
         policy_list_ingress = create_ingress_iptable_rules(ingress_egress_info['ingress'], policy_info)
         policy_list_egress = create_egress_iptable_rules(ingress_egress_info['egress'], policy_info)
     elif policy_info['policy_type'] == 'default_allow_for_ingress':
+        print "Network policy is default allow for Ingress"
         policy_list = create_default_allow_iptable_rules(policy_info['policy_type'], policy_info['namespace'])
     elif policy_info['policy_type'] == 'default_allow_for_egress':
+        print "network policy is default allow for egress"
         policy_list = create_default_allow_iptable_rules(policy_info['policy_type'], policy_info['namespace'])
     elif policy_info['policy_type'] == 'default_deny_for_ingress':
         policy_list = create_default_deny_iptable_rules(policy_info['policy_type'], policy_info['namespace'])
@@ -84,12 +88,14 @@ def create_new_policy_rules(network_policy, uid, callback):
     elif policy_info['policy_type'] == 'default_deny_for_ingress_and_egress':
         policy_list = create_default_ingress_egress_deny_iptable_rules(policy_info['policy_type'], policy_info['namespace'])
 
-
-    callback(network_policy)
+    #print policy_list
+    callback(policy_list)
 
 
 def create_ingress_iptable_rules(ingress_info, policy_info):
 
+
+    print ingress_info, policy_info
     policy_list = {}
     pod_arr = []
     if policy_info['policy_type'] == 'network_policy': 
@@ -109,6 +115,8 @@ def create_ingress_iptable_rules(ingress_info, policy_info):
     namespace_pod_arr = []
     if 'namespace_labels' in ingress_info:
         namespace_pod_arr = get_ingress_nodes_of_pods_namespace_selector(ingress_info['namespace_labels'])
+ 
+    print pod_arr, dest_pod_arr, namespace_pod_arr
 
     if pod_arr != []:
         if dest_pod_arr != []:
@@ -116,42 +124,50 @@ def create_ingress_iptable_rules(ingress_info, policy_info):
                 #Delete any existing rule
                 #iptables -A FORWARD -m comment --comment "network policy chain for POD podname " -d <podIP> -j KUBE-NWPLCY-podnamehash
 
-                policy_del = 'iptables -D FORWARD -d '+pod_arr[policy_pod]['pod_ip']+' -m comment --comment \" network policy chain for POD '+ dest_pod_arr[policy_pod]['pod_name'] + '\" -j KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name']
+                policy_del = 'iptables -D FORWARD -d '+pod_arr[policy_pod]['pod_ip']+' -m comment --comment \" network policy chain for POD '+ dest_pod_arr[policy_pod]['pod_name'] + '\" -j KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'][-5:]
                 send_policy_to_node(dest_pod_arr[policy_pod]['node_name'], policy_del)
                 time.sleep(1)
-               
+                print policy_del
                 #Optionally add a per policy forwarding chain as follows
                 #-A KUBE-NWPLCY-7UYHFX -m comment --comment "network policy rule for pod redis-slave-132015689-fksjt;policy: guestbook-network-policy" -j KUBE-NWPLCY-7UYHFX-SYJW74
                  
                 #Add the new rule now
-                policy = 'iptables -A FORWARD -d '+pod_arr[policy_pod]['pod_ip']+' -m comment --comment \" network policy chain for POD '+ dest_pod_arr[policy_pod]['pod_name'] + '\" -j KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name']
-                send_policy_to_node(pod_arr[pod]['node_name'], policy)
+                policy = 'iptables -N' + ' KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'][-5:]
+                send_policy_to_node(dest_pod_arr[policy_pod]['node_name'], policy)
                 time.sleep(1)
 
-                if pod_arr[pod]['node_name'] in policy_list:
-                    policy_list[pod_arr[pod]['node_name']].append(policy_del)
+                policy = 'iptables -A FORWARD -d '+pod_arr[policy_pod]['pod_ip']+' -m comment --comment \" network policy chain for POD '+ dest_pod_arr[policy_pod]['pod_name'] + '\" -j KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'][-5:]
+                send_policy_to_node(dest_pod_arr[policy_pod]['node_name'], policy)
+                time.sleep(1)
+
+                policy = 'iptables -A FORWARD -d '+pod_arr[policy_pod]['pod_ip']+' -m comment --comment \" network policy chain for POD '+ dest_pod_arr[policy_pod]['pod_name'] + '\" -j KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'][-5:]
+                send_policy_to_node(dest_pod_arr[policy_pod]['node_name'], policy)
+                time.sleep(1)
+
+                if dest_pod_arr[policy_pod]['node_name'] in policy_list:
+                    policy_list[dest_pod_arr[policy_pod]['node_name']].append(policy_del)
                 else:
-                    policy_list[pod_arr[pod]['node_name']] = []
-                    policy_list[pod_arr[pod]['node_name']].append(policy_del)
+                    policy_list[dest_pod_arr[policy_pod]['node_name']] = []
+                    policy_list[dest_pod_arr[policy_pod]['node_name']].append(policy_del)
 
                 for pod in xrange(len(pod_arr)):
                     #-A KUBE-NWPLCY-7UYHFX -s 10.244.3.4/32 -p tcp -m tcp --dport 6379 -m comment --comment "nw policy rule for peer POD frontend-88237173-zir4y" -j ACCEPT   
                     #Delete any existing rule
                     #assuming only one pair of port and protocol for now
                     if 'ingress_ports' in ingress_info:
-                        policy_del = 'iptables -D KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'] + ' -s '+pod_arr[pod]['pod_ip']+'-p' +ingress_info['ingress_ports'][0]['protocol'].lower()+ ' -m '+ingress_info['ingress_ports'][0]['protocol'].lower()+ ' --dport ' + ingress_info['ingress_ports'][0]['port']+ ' -m comment --comment \"network policy for POD '+ dest_pod_arr[policy_pod]['pod_name'] + ' from pod' + pod_arr[pod]['pod_name'] + '\" -j ACCEPT'
+                        policy_del = 'iptables -D KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'][-5:] + ' -s '+pod_arr[pod]['pod_ip']+' -p ' +str(ingress_info['ingress_ports'][0]['protocol'].lower())+ ' -m '+str(ingress_info['ingress_ports'][0]['protocol'].lower())+ ' --dport ' + str(ingress_info['ingress_ports'][0]['port'])+ ' -m comment --comment \"network policy for POD '+ dest_pod_arr[policy_pod]['pod_name'] + ' from pod' + pod_arr[pod]['pod_name'] + '\" -j ACCEPT'
                     
                     else:
-                        policy_del = 'iptables -D KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'] + ' -s '+pod_arr[pod]['pod_ip']+' -m comment --comment \"network policy for POD '+ dest_pod_arr[policy_pod]['pod_name'] + ' from pod' + pod_arr[pod]['pod_name'] + '\" -j ACCEPT'
+                        policy_del = 'iptables -D KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'][-5:] + ' -s '+pod_arr[pod]['pod_ip']+' -m comment --comment \"network policy for POD '+ dest_pod_arr[policy_pod]['pod_name'] + ' from pod' + pod_arr[pod]['pod_name'] + '\" -j ACCEPT'
                     send_policy_to_node(pod_arr[pod]['node_name'], policy_del)
                     time.sleep(1)
                     
                     #Add the new rule now
                     if 'ingress_ports' in ingress_info:
-                        policy = 'iptables -A KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'] + ' -s '+pod_arr[pod]['pod_ip']+'-p' +ingress_info['ingress_ports'][0]['protocol'].lower()+ ' -m '+ingress_info['ingress_ports'][0]['protocol'].lower()+ ' --dport ' + ingress_info['ingress_ports'][0]['port']+ ' -m comment --comment \"network policy for POD '+ dest_pod_arr[policy_pod]['pod_name'] + ' from pod' + pod_arr[pod]['pod_name'] + '\" -j ACCEPT'
+                        policy = 'iptables -A KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'][-5:] + ' -s '+pod_arr[pod]['pod_ip']+' -p ' +str(ingress_info['ingress_ports'][0]['protocol'].lower())+ ' -m '+str(ingress_info['ingress_ports'][0]['protocol'].lower())+ ' --dport ' + str(ingress_info['ingress_ports'][0]['port'])+ ' -m comment --comment \"network policy for POD '+ dest_pod_arr[policy_pod]['pod_name'] + ' from pod' + pod_arr[pod]['pod_name'] + '\" -j ACCEPT'
 
                     else:
-                        policy = 'iptables -A KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'] + ' -s '+pod_arr[pod]['pod_ip']+' -m comment --comment \"network policy for POD '+ dest_pod_arr[policy_pod]['pod_name'] + ' from pod' + pod_arr[pod]['pod_name'] + '\" -j ACCEPT'
+                        policy = 'iptables -A KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'][-5:] + ' -s '+pod_arr[pod]['pod_ip']+' -m comment --comment \"network policy for POD '+ dest_pod_arr[policy_pod]['pod_name'] + ' from pod' + pod_arr[pod]['pod_name'] + '\" -j ACCEPT'
 
                     send_policy_to_node(dest_pod_arr[pod]['node_name'], policy)
                     time.sleep(1)
@@ -168,19 +184,19 @@ def create_ingress_iptable_rules(ingress_info, policy_info):
                 #Delete any existing rule
                 #assuming only one pair of port and protocol for now
                 if 'ingress_ports' in ingress_info:
-                    policy_del = 'iptables -D KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'] + ' -s '+namespace_pod_arr[pod]['pod_ip']+'-p' +ingress_info['ingress_ports'][0]['protocol'].lower()+ ' -m '+ingress_info['ingress_ports'][0]['protocol'].lower()+ ' --dport ' + ingress_info['ingress_ports'][0]['port']+ ' -m comment --comment \"network policy for POD '+ dest_pod_arr[policy_pod]['pod_name'] + ' from pod' + namespace_pod_arr[pod]['pod_name'] + '\" -j ACCEPT'
+                    policy_del = 'iptables -D KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'][-5:] + ' -s '+namespace_pod_arr[pod]['pod_ip']+' -p ' +str(ingress_info['ingress_ports'][0]['protocol'].lower())+ ' -m '+str(ingress_info['ingress_ports'][0]['protocol'].lower())+ ' --dport ' + str(ingress_info['ingress_ports'][0]['port'])+ ' -m comment --comment \"network policy for POD '+ dest_pod_arr[policy_pod]['pod_name'] + ' from pod' + namespace_pod_arr[pod]['pod_name'] + '\" -j ACCEPT'
 
                 else:
-                    policy_del = 'iptables -D KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'] + ' -s '+namespace_pod_arr[pod]['pod_ip']+' -m comment --comment \"network policy for POD '+ dest_pod_arr[policy_pod]['pod_name'] + ' from pod' + namespace_pod_arr[pod]['pod_name'] + '\" -j ACCEPT'
+                    policy_del = 'iptables -D KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'][-5:] + ' -s '+namespace_pod_arr[pod]['pod_ip']+' -m comment --comment \"network policy for POD '+ dest_pod_arr[policy_pod]['pod_name'] + ' from pod' + namespace_pod_arr[pod]['pod_name'] + '\" -j ACCEPT'
                     send_policy_to_node(dest_pod_arr[pod]['node_name'], policy_del)
                     time.sleep(1)
 
                 #Add the new rule now
                 if 'ingress_ports' in ingress_info:
-                    policy = 'iptables -A KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'] + ' -s '+namespace_pod_arr[pod]['pod_ip']+'-p' +ingress_info['ingress_ports'][0]['protocol'].lower()+ ' -m '+ingress_info['ingress_ports'][0]['protocol'].lower()+ ' --dport ' + ingress_info['ingress_ports'][0]['port']+ ' -m comment --comment \"network policy for POD '+ dest_pod_arr[policy_pod]['pod_name'] + ' from pod' + namespace_pod_arr[pod]['pod_name'] + '\" -j ACCEPT'
+                    policy = 'iptables -A KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'][-5:] + ' -s '+namespace_pod_arr[pod]['pod_ip']+' -p ' +str(ingress_info['ingress_ports'][0]['protocol'].lower())+ ' -m '+str(ingress_info['ingress_ports'][0]['protocol'].lower())+ ' --dport ' + str(ingress_info['ingress_ports'][0]['port'])+ ' -m comment --comment \"network policy for POD '+ dest_pod_arr[policy_pod]['pod_name'] + ' from pod' + namespace_pod_arr[pod]['pod_name'] + '\" -j ACCEPT'
 
                 else:
-                    policy = 'iptables -A KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'] + ' -s '+namespace_pod_arr[pod]['pod_ip']+' -m comment --comment \"network policy for POD '+ dest_pod_arr[policy_pod]['pod_name'] + ' from pod ' + namespace_pod_arr[pod]['pod_name'] + '\" -j ACCEPT'
+                    policy = 'iptables -A KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'][-5:] + ' -s '+namespace_pod_arr[pod]['pod_ip']+' -m comment --comment \"network policy for POD '+ dest_pod_arr[policy_pod]['pod_name'] + ' from pod ' + namespace_pod_arr[pod]['pod_name'] + '\" -j ACCEPT'
 
                     send_policy_to_node(dest_pod_arr[pod]['node_name'], policy)
                     time.sleep(1)
@@ -197,14 +213,14 @@ def create_ingress_iptable_rules(ingress_info, policy_info):
                 #Delete any existing rule
                 #assuming only one pair of port and protocol for now
                 if 'ingress_ports' in ingress_info:
-                    policy_del = 'iptables -D KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'] + ' -s '+ingress_info['from_ip_block_cidr']+' -p' +ingress_info['ingress_ports'][0]['protocol'].lower()+ ' -m '+ingress_info['ingress_ports'][0]['protocol'].lower()+ ' --dport ' + ingress_info['ingress_ports'][0]['port']+ ' -m comment --comment \"network policy for POD '+ dest_pod_arr[policy_pod]['pod_name'] + ' from' + ingress_info['from_ip_block_cidr'] + '\" -j ACCEPT'
+                    policy_del = 'iptables -D KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'][-5:] + ' -s '+ingress_info['from_ip_block_cidr']+' -p ' +str(ingress_info['ingress_ports'][0]['protocol'].lower())+ ' -m '+str(ingress_info['ingress_ports'][0]['protocol'].lower())+ ' --dport ' + str(ingress_info['ingress_ports'][0]['port'])+ ' -m comment --comment \"network policy for POD '+ dest_pod_arr[policy_pod]['pod_name'] + ' from' + ingress_info['from_ip_block_cidr'] + '\" -j ACCEPT'
                     if 'except_ip_cidrs' in ingress_info:
-                        policy_del_two = 'iptables -D KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'] + ' -s '+ingress_info['except_ip_cidrs'][0]+' -p' +ingress_info['ingress_ports'][0]['protocol'].lower()+ ' -m '+ingress_info['ingress_ports'][0]['protocol'].lower()+ ' --dport ' + ingress_info['ingress_ports'][0]['port']+ ' -m comment --comment \"network policy for POD '+ dest_pod_arr[policy_pod]['pod_name'] + ' from' + ingress_info['except_ip_cidrs'][0] + '\" -j DROP'
+                        policy_del_two = 'iptables -D KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'][-5:] + ' -s '+ingress_info['except_ip_cidrs'][0]+' -p ' +str(ingress_info['ingress_ports'][0]['protocol'].lower())+ ' -m '+str(ingress_info['ingress_ports'][0]['protocol'].lower())+ ' --dport ' + str(ingress_info['ingress_ports'][0]['port'])+ ' -m comment --comment \"network policy for POD '+ dest_pod_arr[policy_pod]['pod_name'] + ' from' + ingress_info['except_ip_cidrs'][0] + '\" -j DROP'
 
                 else:
-                    policy_del = 'iptables -D KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'] + ' -s '+namespace_pod_arr[pod]['pod_ip']+' -m comment --comment \"network policy for POD '+ dest_pod_arr[policy_pod]['pod_name'] + ' from pod' + namespace_pod_arr[pod]['pod_name'] + '\" -j ACCEPT'
+                    policy_del = 'iptables -D KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'][-5:] + ' -s '+namespace_pod_arr[pod]['pod_ip']+' -m comment --comment \"network policy for POD '+ dest_pod_arr[policy_pod]['pod_name'] + ' from pod' + namespace_pod_arr[pod]['pod_name'] + '\" -j ACCEPT'
                     if 'except_ip_cidrs' in ingress_info:
-                        policy_del_two = 'iptables -D KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'] + ' -s '+ingress_info['except_ip_cidrs'][0]+' -m comment --comment \"network policy for POD '+ dest_pod_arr[policy_pod]['pod_name'] + ' from' + ingress_info['except_ip_cidrs'][0] + '\" -j DROP'
+                        policy_del_two = 'iptables -D KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'][-5:] + ' -s '+ingress_info['except_ip_cidrs'][0]+' -m comment --comment \"network policy for POD '+ dest_pod_arr[policy_pod]['pod_name'] + ' from' + ingress_info['except_ip_cidrs'][0] + '\" -j DROP'
                    
                 send_policy_to_node(dest_pod_arr[pod]['node_name'], policy_del)
                 time.sleep(1)
@@ -213,25 +229,30 @@ def create_ingress_iptable_rules(ingress_info, policy_info):
 
 
                 if 'ingress_ports' in ingress_info:
-                    policy = 'iptables -A KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'] + ' -s '+ingress_info['from_ip_block_cidr']+' -p' +ingress_info['ingress_ports'][0]['protocol'].lower()+ ' -m '+ingress_info['ingress_ports'][0]['protocol'].lower()+ ' --dport ' + ingress_info['ingress_ports'][0]['port']+ ' -m comment --comment \"network policy for POD '+ dest_pod_arr[policy_pod]['pod_name'] + ' from' + ingress_info['from_ip_block_cidr'] + '\" -j ACCEPT'
+                    policy = 'iptables -A KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'][-5:] + ' -s '+ingress_info['from_ip_block_cidr']+' -p ' +str(ingress_info['ingress_ports'][0]['protocol'].lower())+ ' -m '+str(ingress_info['ingress_ports'][0]['protocol'].lower())+ ' --dport ' + str(ingress_info['ingress_ports'][0]['port'])+ ' -m comment --comment \"network policy for POD '+ dest_pod_arr[policy_pod]['pod_name'] + ' from' + ingress_info['from_ip_block_cidr'] + '\" -j ACCEPT'
                     if 'except_ip_cidrs' in ingress_info:
-                        policy_two = 'iptables -A KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'] + ' -s '+ingress_info['except_ip_cidrs'][0]+' -p' +ingress_info['ingress_ports'][0]['protocol'].lower()+ ' -m '+ingress_info['ingress_ports'][0]['protocol'].lower()+ ' --dport ' + ingress_info['ingress_ports'][0]['port']+ ' -m comment --comment \"network policy for POD '+ dest_pod_arr[policy_pod]['pod_name'] + ' from' + ingress_info['except_ip_cidrs'][0] + '\" -j DROP'
+                        policy_two = 'iptables -A KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'][-5:] + ' -s '+ingress_info['except_ip_cidrs'][0]+' -p ' +str(ingress_info['ingress_ports'][0]['protocol'].lower())+ ' -m '+str(ingress_info['ingress_ports'][0]['protocol'].lower())+ ' --dport ' + str(ingress_info['ingress_ports'][0]['port'])+ ' -m comment --comment \"network policy for POD '+ dest_pod_arr[policy_pod]['pod_name'] + ' from' + ingress_info['except_ip_cidrs'][0] + '\" -j DROP'
 
                 else:
-                    policy = 'iptables -A KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'] + ' -s '+namespace_pod_arr[pod]['pod_ip']+' -m comment --comment \"network policy for POD '+ dest_pod_arr[policy_pod]['pod_name'] + ' from pod' + namespace_pod_arr[pod]['pod_name'] + '\" -j ACCEPT'
+                    policy = 'iptables -A KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'][-5:] + ' -s '+namespace_pod_arr[pod]['pod_ip']+' -m comment --comment \"network policy for POD '+ dest_pod_arr[policy_pod]['pod_name'] + ' from pod' + namespace_pod_arr[pod]['pod_name'] + '\" -j ACCEPT'
                     if 'except_ip_cidrs' in ingress_info:
-                        policy_two = 'iptables -A KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'] + ' -s '+ingress_info['except_ip_cidrs'][0]+ '-m comment --comment \"network policy for POD '+ dest_pod_arr[policy_pod]['pod_name'] + ' from' + ingress_info['except_ip_cidrs'][0] + '\" -j DROP'
-                
+                        policy_two = 'iptables -A KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'][-5:] + ' -s '+ingress_info['except_ip_cidrs'][0]+ '-m comment --comment \"network policy for POD '+ dest_pod_arr[policy_pod]['pod_name'] + ' from' + ingress_info['except_ip_cidrs'][0] + '\" -j DROP'
+              
+                print policy  
                 send_policy_to_node(dest_pod_arr[pod]['node_name'], policy)
                 time.sleep(1)
+                print policy_two
                 send_policy_to_node(dest_pod_arr[pod]['node_name'], policy_two)
                 time.sleep(1)
 
                 if dest_pod_arr[pod]['node_name'] in policy_list:
                     policy_list[dest_pod_arr[pod]['node_name']].append(policy_del)
+                    policy_list[dest_pod_arr[pod]['node_name']].append(policy_del_two)
+
                 else:
                     policy_list[dest_pod_arr[pod]['node_name']] = []
                     policy_list[dest_pod_arr[pod]['node_name']].append(policy_del)
+                    policy_list[dest_pod_arr[pod]['node_name']].append(policy_del_two)
 
     return policy_list                   
 
@@ -252,32 +273,31 @@ def create_egress_iptable_rules(egress_info, policy_info):
     if 'to_ip_block_cidr' in egress_info:
         if 'egress_ports' in egress_info:
             for policy_pod in xrange(len(src_pod_arr)):
-                #-A KUBE-NWPLCY-7UYHFX -s 10.244.3.4/32 -p tcp -m tcp --dport 6379 -m comment --comment "nw policy rule for peer POD frontend-88237173-zir4y" -j ACCEPT
                 #Delete any existing rule
                 #assuming only one pair of port and protocol for now
                 if 'egress_ports' in egress_info:
-                    policy_del = 'iptables -D KUBE-NWPLCY-'+ src_pod_arr[policy_pod]['pod_name'] + ' -d '+egress_info['to_ip_block_cidr']+' -p' +egress_info['egress_ports'][0]['protocol'].lower()+ ' -m '+egress_info['egress_ports'][0]['protocol'].lower()+ ' --sport ' + egress_info['egress_ports'][0]['port']+ ' -m comment --comment \"network policy for POD '+ src_pod_arr[policy_pod]['pod_name'] + ' from' + egress_info['to_ip_block_cidr'] + '\" -j ACCEPT'
+                    policy_del = 'iptables -D KUBE-NWPLCY-'+ src_pod_arr[policy_pod]['pod_name'][-5:] + ' -d '+egress_info['to_ip_block_cidr']+' -p ' +str(egress_info['egress_ports'][0]['protocol'].lower())+ ' -m '+str(egress_info['egress_ports'][0]['protocol'].lower())+ ' --sport ' + str(egress_info['egress_ports'][0]['port']) + ' -m comment --comment \"network policy for POD '+ src_pod_arr[policy_pod]['pod_name'] + ' from' + egress_info['to_ip_block_cidr'] + '\" -j ACCEPT'
 
                 else:
-                    policy_del = 'iptables -D KUBE-NWPLCY-'+ src_pod_arr[policy_pod]['pod_name'] + ' -d '+egress_info['to_ip_block_cidr']+' -m comment --comment \"network policy for POD '+ src_pod_arr[policy_pod]['pod_name'] + ' from  ' + egress_info['to_ip_block_cidr'] + '\" -j ACCEPT'
+                    policy_del = 'iptables -D KUBE-NWPLCY-'+ src_pod_arr[policy_pod]['pod_name'][-5:] + ' -d '+egress_info['to_ip_block_cidr']+' -m comment --comment \"network policy for POD '+ src_pod_arr[policy_pod]['pod_name'] + ' from  ' + egress_info['to_ip_block_cidr'] + '\" -j ACCEPT'
 
-                send_policy_to_node(dest_pod_arr[pod]['node_name'], policy_del)
+                send_policy_to_node(src_pod_arr[policy_pod]['node_name'], policy_del)
                 time.sleep(1)
 
                 if 'egress_ports' in egress_info:
-                    policy = 'iptables -A KUBE-NWPLCY-'+ src_pod_arr[policy_pod]['pod_name'] + ' -s '+egress_info['to_ip_block_cidr']+' -p' +engress_info['engress_ports'][0]['protocol'].lower()+ ' -m '+ingress_info['ingress_ports'][0]['protocol'].lower()+ ' --sport ' + egress_info['egress_ports'][0]['port']+ ' -m comment --comment \"network policy for POD '+ src_pod_arr[policy_pod]['pod_name'] + ' from' + egress_info['to_ip_block_cidr'] + '\" -j ACCEPT'
+                    policy = 'iptables -A KUBE-NWPLCY-'+ src_pod_arr[policy_pod]['pod_name'][-5:] + ' -s '+egress_info['to_ip_block_cidr']+' -p ' + str(egress_info['egress_ports'][0]['protocol'].lower())+ ' -m '+str(egress_info['egress_ports'][0]['protocol'].lower())+ ' --sport ' + str(egress_info['egress_ports'][0]['port'])+ ' -m comment --comment \"network policy for POD '+ src_pod_arr[policy_pod]['pod_name'] + ' from' + egress_info['to_ip_block_cidr'] + '\" -j ACCEPT'
 
                 else:
-                    policy = 'iptables -A KUBE-NWPLCY-'+ src_pod_arr[policy_pod]['pod_name'] + ' -s '+egress_info['to_ip_block_cidr']+ ' -m comment --comment \"network policy for POD '+ src_pod_arr[policy_pod]['pod_name'] + ' from ' + egress_info['to_ip_block_cidr'] + '\" -j ACCEPT'
+                    policy = 'iptables -A KUBE-NWPLCY-'+ src_pod_arr[policy_pod]['pod_name'][-5:] + ' -s '+egress_info['to_ip_block_cidr']+ ' -m comment --comment \"network policy for POD '+ src_pod_arr[policy_pod]['pod_name'] + ' from ' + egress_info['to_ip_block_cidr'] + '\" -j ACCEPT'
      
-                send_policy_to_node(dest_pod_arr[pod]['node_name'], policy)
+                send_policy_to_node(src_pod_arr[policy_pod]['node_name'], policy)
                 time.sleep(1)
 
-                if dest_pod_arr[pod]['node_name'] in policy_list:
-                    policy_list[dest_pod_arr[pod]['node_name']].append(policy_del)
+                if src_pod_arr[policy_pod]['node_name'] in policy_list:
+                    policy_list[src_pod_arr[policy_pod]['node_name']].append(policy_del)
                 else:
-                    policy_list[dest_pod_arr[pod]['node_name']] = []
-                    policy_list[dest_pod_arr[pod]['node_name']].append(policy_del)
+                    policy_list[src_pod_arr[policy_pod]['node_name']] = []
+                    policy_list[src_pod_arr[policy_pod]['node_name']].append(policy_del)
 
     return policy_list
  
@@ -525,7 +545,6 @@ def watch_for_policies():
         elif event['type'] == 'UPDATED':
            network_policy_updated[event['object'].metadata.uid] = event['raw_object']
            result = yield gen.Task(create_updated_policy_rules, network_policy_updated)
-        print 'result is', result
         IOLoop.instance().stop() 
 
 
