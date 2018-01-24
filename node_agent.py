@@ -1,9 +1,15 @@
 #!/usr/bin/env python
 import pika
 import sys
+import os
 
 def callback(ch, method, properties, body):
     print(" [x] %r:%r" % (method.routing_key, body))
+    print("Adding policy: "+body)
+    cmd = body+' > tmp'
+    os.system(cmd)
+    print open('tmp', 'r').read()
+    os.remove('tmp') 
 
 def receive_iptables_policy(node_name):
 
@@ -28,10 +34,13 @@ def receive_iptables_policy(node_name):
     channel.start_consuming()
 
 def main():
-
+    
     #determine node_name
-    node_name = "ovs-10.#"
-    receive_iptables_policy(node_name)
+    node_name = "ovs-9.#"
+    receive_iptables_policy(node_name)    
 
 if __name__ == '__main__':
     main()
+
+
+
