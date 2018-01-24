@@ -33,5 +33,5 @@ The design relies on python Kubernetes client which gives an easy python API to 
 
 Setup:
 
-Kubernetes 1.9.1 with flannel 
+Kubernetes 1.9.1 with one master & node 
 
