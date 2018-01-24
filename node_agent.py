@@ -13,7 +13,7 @@ def callback(ch, method, properties, body):
 
 def receive_iptables_policy(node_name):
 
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host='10.31.32.67'))
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host='20.100.100.101'))
     channel = connection.channel()
 
     channel.exchange_declare(exchange='topic_logs', exchange_type='topic')
