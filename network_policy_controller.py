@@ -25,7 +25,7 @@ def create_new_policy_rules(network_policy, uid, callback):
             policy_info['namespace'] = network_policy[uid]['metadata']['namespace']
 
     #Determing default deny or default allow policies for Ingress and Egress
-    if 'spec' in network_policy[uid]:
+    if network_policy[uid]['spec']['podSelector'] != {}:
         if 'policyTypes' in network_policy[uid]['spec']:
             if len(network_policy[uid]['spec']['policyTypes']) == 2:
                 if network_policy[uid]['spec']['policyTypes'] == ['Ingress', "Egress"]:
@@ -49,13 +49,33 @@ def create_new_policy_rules(network_policy, uid, callback):
                              policy_info['policy_type'] = 'network_policy'
     else:
         if 'ingress' in network_policy[uid]['spec']:
-            if network_policy[uid]['spec']['ingress'] == {}:
+            if network_policy[uid]['spec']['ingress'] == [{}]:
                 if network_policy[uid]['spec']['podSelector'] == {}:
                     policy_info['policy_type'] = 'default_allow_for_ingress'
         elif 'egress' in network_policy[uid]['spec']:
-            if network_policy[uid]['spec']['egress'] == {}:
+            if network_policy[uid]['spec']['egress'] == [{}]:
                 if network_policy[uid]['spec']['podSelector'] == {}:
                     policy_info['policy_type'] = 'default_allow_for_egress'
+        elif len(network_policy[uid]['spec']['policyTypes']) == 1:
+            if network_policy[uid]['spec']['policyTypes'] == ['Ingress']:
+                if 'podSelector' in network_policy[uid]['spec']:
+                    if network_policy[uid]['spec']['podSelector'] == {}:
+                        policy_info['policy_type'] = 'default_deny_for_ingress'
+                    else:
+                        policy_info['policy_type'] = 'network_policy'
+            elif network_policy[uid]['spec']['policyTypes'] == ['Egress']:
+                if 'podSelector' in network_policy[uid]['spec']:
+                    if network_policy[uid]['spec']['podSelector'] == {}:
+                        policy_info['policy_type'] = 'default_deny_for_egress'
+                    else:
+                        policy_info['policy_type'] = 'network_policy'
+        elif len(network_policy[uid]['spec']['policyTypes']) == 2:
+            if network_policy[uid]['spec']['policyTypes'] == ['Ingress', "Egress"]:
+                if 'podSelector' in network_policy[uid]['spec']:
+                    if network_policy[uid]['spec']['podSelector'] == {}:
+                        policy_info['policy_type'] = 'default_deny_for_ingress_and_egress'
+                    else:
+                        policy_info['policy_type'] = 'network_policy'
 
     #Parse Network policy ports and labels 
     if policy_info['policy_type'] == 'network_policy':
@@ -64,13 +84,11 @@ def create_new_policy_rules(network_policy, uid, callback):
              if 'matchLabels' in network_policy[uid]['spec']['podSelector']:    
                  policy_info['pod_selector_labels'] = network_policy[uid]['spec']['podSelector']['matchLabels']
 
-    print ingress_egress_info
 
     policy_list = {}
     policy_list_ingress = {}
     policy_list_egress = {}
 
-    print policy_info['policy_type']
     if policy_info['policy_type'] == 'network_policy':
         print "Network policy has both ingress and egress"
         policy_list_ingress = create_ingress_iptable_rules(ingress_egress_info['ingress'], policy_info)
@@ -314,9 +332,9 @@ def create_egress_iptable_rules(egress_info, policy_info):
 def create_default_ingress_egress_deny_iptable_rules(policy_type, namespace):
     if policy_type == 'default_deny_for_ingress_and_egress':
         policy_list_ingress = {}
-        policy_list_ingress = def_create_default_deny_iptable_rules('default_deny_for_ingress', namespace)
+        policy_list_ingress = create_default_deny_iptable_rules('default_deny_for_ingress', namespace)
         policy_list_egress = {}
-        policy_list_egress = def_create_default_deny_iptable_rules('default_deny_for_egress', namespace)
+        policy_list_egress = create_default_deny_iptable_rules('default_deny_for_egress', namespace)
         for key in policy_list_ingress:
             if key in policy_list_egress:
                 for rules in policy_list_egress[key]:
