@@ -304,10 +304,10 @@ def create_egress_iptable_rules(egress_info, policy_info):
 
 
                 if 'egress_ports' in egress_info:
-                    policy = 'iptables -A KUBE-NWPLCY-'+ src_pod_arr[policy_pod]['pod_name'][-5:] + ' -s '+egress_info['to_ip_block_cidr']+' -p ' + str(egress_info['egress_ports'][0]['protocol'].lower())+ ' -m '+str(egress_info['egress_ports'][0]['protocol'].lower())+ ' --sport ' + str(egress_info['egress_ports'][0]['port'])+ ' -m comment --comment \"network policy for POD '+ src_pod_arr[policy_pod]['pod_name'] + ' from' + egress_info['to_ip_block_cidr'] + '\" -j ACCEPT'
+                    policy = 'iptables -A KUBE-NWPLCY-'+ src_pod_arr[policy_pod]['pod_name'][-5:] + '-d '+pod_arr[policy_pod]['pod_ip']+' ' -d '+egress_info['to_ip_block_cidr']+' -p ' + str(egress_info['egress_ports'][0]['protocol'].lower())+ ' -m '+str(egress_info['egress_ports'][0]['protocol'].lower())+ ' --sport ' + str(egress_info['egress_ports'][0]['port'])+ ' -m comment --comment \"network policy for POD '+ src_pod_arr[policy_pod]['pod_name'] + ' from' + egress_info['to_ip_block_cidr'] + '\" -j ACCEPT'
 
                 else:
-                    policy = 'iptables -A KUBE-NWPLCY-'+ src_pod_arr[policy_pod]['pod_name'][-5:] + ' -s '+egress_info['to_ip_block_cidr']+ ' -m comment --comment \"network policy for POD '+ src_pod_arr[policy_pod]['pod_name'] + ' from ' + egress_info['to_ip_block_cidr'] + '\" -j ACCEPT'
+                    policy = 'iptables -A KUBE-NWPLCY-'+ src_pod_arr[policy_pod]['pod_name'][-5:] + ' -d '+egress_info['to_ip_block_cidr']+ ' -m comment --comment \"network policy for POD '+ src_pod_arr[policy_pod]['pod_name'] + ' from ' + egress_info['to_ip_block_cidr'] + '\" -j ACCEPT'
                 policy_two = 'iptables -A KUBE-NWPLCY-'+ src_pod_arr[policy_pod]['pod_name'][-5:] + ' -j REJECT' 
                 
                 send_policy_to_node(src_pod_arr[policy_pod]['node_name'], policy)
