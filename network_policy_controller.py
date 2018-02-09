@@ -28,7 +28,7 @@ def create_new_policy_rules(network_policy, uid, callback):
     if network_policy[uid]['spec']['podSelector'] != {}:
         if 'policyTypes' in network_policy[uid]['spec']:
             if len(network_policy[uid]['spec']['policyTypes']) == 2:
-                if network_policy[uid]['spec']['policyTypes'] == ['Ingress', "Egress"]:
+                if network_policy[uid]['spec']['policyTypes'] == ['Ingress', 'Egress']:
                     if 'podSelector' in network_policy[uid]['spec']:
                         if network_policy[uid]['spec']['podSelector'] == {}:
                             policy_info['policy_type'] = 'default_deny_for_ingress_and_egress'
@@ -70,7 +70,7 @@ def create_new_policy_rules(network_policy, uid, callback):
                     else:
                         policy_info['policy_type'] = 'network_policy'
         elif len(network_policy[uid]['spec']['policyTypes']) == 2:
-            if network_policy[uid]['spec']['policyTypes'] == ['Ingress', "Egress"]:
+            if network_policy[uid]['spec']['policyTypes'] == ['Ingress', 'Egress']:
                 if 'podSelector' in network_policy[uid]['spec']:
                     if network_policy[uid]['spec']['podSelector'] == {}:
                         policy_info['policy_type'] = 'default_deny_for_ingress_and_egress'
