@@ -158,10 +158,6 @@ def create_ingress_iptable_rules(ingress_info, policy_info):
                 send_policy_to_node(dest_pod_arr[policy_pod]['node_name'], policy)
                 time.sleep(1)
 
-                policy = 'iptables -A FORWARD -d '+pod_arr[policy_pod]['pod_ip']+' -m comment --comment \" network policy chain for POD '+ dest_pod_arr[policy_pod]['pod_name'] + '\" -j KUBE-NWPLCY-'+ dest_pod_arr[policy_pod]['pod_name'][-5:]
-                send_policy_to_node(dest_pod_arr[policy_pod]['node_name'], policy)
-                time.sleep(1)
-
                 if dest_pod_arr[policy_pod]['node_name'] in policy_list:
                     policy_list[dest_pod_arr[policy_pod]['node_name']].append(policy_del)
                 else:
