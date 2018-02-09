@@ -10,5 +10,6 @@ To-Do:
 8. Add a license file to the repo
 9. Add a requirements.txt
 10. Handle multiple network policy events
+11. Make a separate policy-chain for pod egress and add egress rules there instead of a single chain for Ingress & Egress
 
 
